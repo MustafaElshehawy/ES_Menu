@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DineSmart | Pro Menu</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="tailwind.generated.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-gray-50 text-gray-900 overflow-x-hidden">
+
+    <div id="app"></div>
+
+    <script type="module">
+        import { escapeHtml } from './shared.js';
+        const safe = escapeHtml;
+
+        let state = null;
+
+        async function loadStore() {
+            const slug = new URLSearchParams(window.location.search).get('store');
+            if (!slug) {
+                showStatus('أهلاً بك في DineSmart', 'افتح رابط المنيو الخاص بمتجرك، أو سجّل الدخول لإنشاء مساحة جديدة.');
+                return;
+            }
+            try {
+                const response = await fetch(`/api/public/${encodeURIComponent(slug)}`);
+                const store = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(store.error || 'تعذر تحميل المنيو.');
+                state = {
+                    view: 'client',
+                    lang: 'en',
+                    searchQuery: '',
+                    activeCategoryId: null,
+                    cart: [],
+                    profile: store.profile,
+                    categories: store.categories,
+                    theme: store.theme,
+                    currency: store.currency || 'SAR',
+                    menu: store.menu,
+                    selectedItemId: null,
+                    isCartOpen: false
+                };
+                render();
+            } catch (error) {
+                showStatus('المنيو غير متاح', error.message);
+            }
+        }
+
+        function showStatus(title, message) {
+            document.getElementById('app').innerHTML = `
+                <main class="min-h-screen grid place-items-center p-6 text-center">
+                    <section class="max-w-md bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+                        <div class="text-4xl mb-4">✳</div><h1 class="text-xl font-bold mb-2">${safe(title)}</h1>
+                        <p class="text-sm text-gray-500 leading-7 mb-6">${safe(message)}</p>
+                        <a href="./admin-dashboard.html" class="inline-flex bg-blue-600 text-white px-5 py-3 rounded-xl text-sm font-bold">إدارة المنيو</a>
+                    </section>
+                </main>`;
+        }
+
+        function render() {
+            const app = document.getElementById('app');
+            document.body.className = `bg-gray-50 text-gray-900 ${state.lang === 'ar' ? 'rtl' : 'ltr'}`;
+            document.documentElement.lang = state.lang;
+            document.documentElement.dir = state.lang === 'ar' ? 'rtl' : 'ltr';
+            document.documentElement.style.setProperty('--blue', state.theme.primary || '#2563eb');
+            document.body.style.backgroundColor = state.theme.background || '#f8fafc';
+            document.title = state.profile.siteName || state.profile.name[state.lang] || 'DineSmart';
+            if (state.view === 'admin') renderAdmin(app); else renderClient(app);
+        }
+
+        function renderClient(container) {
+            const filteredMenu = state.menu.filter(item => {
+                const matchesSearch = (item.name[state.lang] || item.name.ar || '').toLowerCase().includes(state.searchQuery.toLowerCase());
+                const matchesCategory = state.activeCategoryId ? item.categoryId === state.activeCategoryId : true;
+                return matchesSearch && matchesCategory && item.available;
+            });
+
+            container.innerHTML = `
+                <header class="bg-white p-6 sticky top-0 z-40 shadow-sm border-b border-gray-100">
+                    <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            ${state.profile.logo ? `<img src="${safe(state.profile.logo)}" class="w-12 h-12 rounded-2xl shadow-sm object-cover">` : '<div class="w-12 h-12 rounded-2xl bg-blue-100 grid place-items-center text-blue-700 font-bold">✳</div>'}
+                            <div>
+                                <h1 class="font-bold text-xl">${safe(state.profile.name[state.lang] || state.profile.name.ar)}</h1>
+                                <p class="text-xs text-gray-400 font-medium">${safe(state.profile.address[state.lang] || state.profile.address.ar)}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 w-full md:w-auto">
+                            <input id="menu-search" type="text" placeholder="${state.lang === 'en' ? 'Search...' : 'بحث...'}" 
+                                value="${safe(state.searchQuery)}"
+                                class="flex-1 md:w-64 bg-gray-100 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                            <button data-action="toggle-lang" class="bg-gray-100 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap">
+                                ${state.lang === 'en' ? 'العربية' : 'English'}
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="max-w-7xl mx-auto flex gap-3 overflow-x-auto p-6 no-scrollbar">
+                    <button data-category-id="" class="flex-shrink-0 px-6 py-2 rounded-xl text-xs font-bold transition-all ${!state.activeCategoryId ? 'category-active' : 'bg-white text-gray-400 border'}">
+                        ${state.lang === 'en' ? 'All' : 'الكل'}
+                    </button>
+                    ${state.categories.map(cat => `
+                        <button data-category-id="${safe(cat.id)}" class="flex-shrink-0 px-6 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${state.activeCategoryId === cat.id ? 'category-active' : 'bg-white text-gray-400 border'}">
+                            <span>${safe(cat.icon)}</span> <span>${safe(cat.name[state.lang] || cat.name.ar)}</span>
+                        </button>
+                    `).join('')}
+                </div>
+
+                <div class="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 px-6 pb-32">
+                    ${filteredMenu.map(item => `
+                        <div data-item-id="${safe(item.id)}" class="item-card bg-white rounded-[24px] overflow-hidden border border-gray-100 flex flex-col h-full cursor-pointer">
+                            <div class="relative w-full aspect-video-custom overflow-hidden bg-gray-100">
+                                <img src="${safe(item.image)}" class="w-full h-full object-cover">
+                                <div class="absolute bottom-3 ${state.lang === 'ar' ? 'left-3' : 'right-3'} bg-white/95 backdrop-blur-md px-3 py-1 rounded-xl text-[12px] font-bold shadow-sm text-blue-600">
+    ${item.price.toFixed(2)} ${state.currency}
+</div>
+                            </div>
+                            <div class="p-4 flex flex-col justify-between flex-grow">
+                                <div>
+                                    <h3 class="font-bold text-[14px] leading-snug mb-2 line-clamp-2 min-h-[40px]">
+                                        ${safe(item.name[state.lang] || item.name.ar)}
+                                    </h3>
+                                    <p class="text-[11px] text-gray-400 font-medium">🔥 ${item.calories} ${state.lang === 'en' ? 'kcal' : 'سعرة'}</p>
+                                </div>
+                                <button data-action="add-item" data-item-id="${safe(item.id)}" class="mt-4 w-full bg-blue-50 text-blue-600 py-2.5 rounded-xl text-[11px] font-bold hover:bg-blue-600 hover:text-white transition-colors">
+                                    + ${state.lang === 'en' ? 'Add' : 'إضافة'}
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                ${state.cart.length > 0 ? `
+                    <div class="fixed bottom-8 inset-x-6 z-40 flex justify-center">
+                        <button data-action="cart-open" class="max-w-md w-full bg-blue-600 text-white p-5 rounded-[22px] shadow-2xl flex justify-between items-center animate-slide-up">
+                            <span class="font-bold uppercase tracking-wider text-xs">${state.lang === 'en' ? 'Review Order' : 'مراجعة الطلب'} (${state.cart.length})</span>
+                            <span class="font-bold text-lg">${state.cart.reduce((s, i) => s + (i.price * i.qty), 0).toFixed(2)} ${state.currency}</span>
+                        </button>
+                    </div>
+                ` : `
+                    <button data-action="open-admin" class="fixed bottom-8 right-8 bg-white p-4 rounded-full shadow-lg text-gray-300 border" aria-label="إدارة المنيو">⚙️</button>
+                `}
+
+                ${state.selectedItemId ? renderDetailModal() : ''}
+                ${state.isCartOpen ? renderCartModal() : ''}
+            `;
+        }
+
+        // --- المودالات ووظائف الأزرار تبقى كما هي مع تحديث التصميم ---
+        function renderDetailModal() {
+            const item = state.menu.find(i => i.id === state.selectedItemId);
+            return `
+                <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" data-action="close-detail"></div>
+                    <div class="bg-white w-full max-w-sm rounded-[32px] overflow-hidden relative animate-slide-up">
+                        <img src="${safe(item.image)}" class="w-full h-56 object-cover">
+                        <div class="p-6">
+                            <h2 class="text-xl font-bold mb-2">${safe(item.name[state.lang] || item.name.ar)}</h2>
+                            <p class="text-gray-500 text-xs leading-relaxed mb-4">${safe(item.description[state.lang] || item.description.ar)}</p>
+                            <button data-action="add-item" data-item-id="${safe(item.id)}" class="w-full bg-blue-600 text-white py-3.5 rounded-xl font-bold text-sm">
+                                ${state.lang === 'en' ? 'Add to Cart' : 'إضافة للسلة'}
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function renderCartModal() {
+            const total = state.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            return `
+                <div class="fixed inset-0 z-50 flex items-end justify-center">
+                    <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" data-action="cart-close"></div>
+                    <div class="bg-white w-full max-w-lg rounded-t-[40px] p-8 animate-slide-up relative">
+                        <h2 class="text-xl font-bold mb-6">${state.lang === 'en' ? 'My Order' : 'طلبي'}</h2>
+                        <div class="space-y-4 mb-8">
+                            ${state.cart.map(i => `
+                                <div class="flex justify-between items-center border-b pb-4">
+                                    <div><p class="font-bold text-sm">${i.name[state.lang] || i.name.ar}</p><p class="text-xs text-blue-600 font-bold">${i.price.toFixed(2)} ${state.currency}</p></div>
+                                    <div class="flex items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-xl font-bold text-xs">
+                                        <button data-action="update-qty" data-item-id="${safe(i.id)}" data-delta="-1" aria-label="تقليل الكمية">-</button><span>${i.qty}</span><button data-action="update-qty" data-item-id="${safe(i.id)}" data-delta="1" aria-label="زيادة الكمية">+</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="flex justify-between font-bold text-lg mb-6"><span>Total</span><span>${total.toFixed(2)} ${state.currency}</span></div>
+                        <button data-action="checkout" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold">Checkout</button>
+                    </div>
+                </div>`;
+        }
+
+        function addToCart(id) {
+            const item = state.menu.find(menuItem => menuItem.id === id);
+            if (!item) return;
+            const cartItem = state.cart.find(entry => entry.id === id);
+            if (cartItem) cartItem.qty++;
+            else state.cart.push({ ...item, qty: 1 });
+            state.selectedItemId = null;
+            render();
+        }
+
+        document.getElementById('app').addEventListener('input', event => {
+            if (event.target.id !== 'menu-search') return;
+            const cursor = event.target.selectionStart;
+            state.searchQuery = event.target.value;
+            render();
+            const search = document.getElementById('menu-search');
+            search.focus();
+            search.setSelectionRange(cursor, cursor);
+        });
+
+        document.getElementById('app').addEventListener('click', event => {
+            const categoryButton = event.target.closest('[data-category-id]');
+            if (categoryButton) {
+                state.activeCategoryId = categoryButton.dataset.categoryId || null;
+                render();
+                return;
+            }
+            const actionButton = event.target.closest('[data-action]');
+            if (actionButton) {
+                const id = actionButton.dataset.itemId;
+                switch (actionButton.dataset.action) {
+                    case 'toggle-lang': state.lang = state.lang === 'en' ? 'ar' : 'en'; render(); break;
+                    case 'add-item': addToCart(id); break;
+                    case 'cart-open': state.isCartOpen = true; render(); break;
+                    case 'cart-close': state.isCartOpen = false; render(); break;
+                    case 'close-detail': state.selectedItemId = null; render(); break;
+                    case 'update-qty': {
+                        const cartItem = state.cart.find(item => item.id === id);
+                        if (cartItem) {
+                            cartItem.qty += Number(actionButton.dataset.delta);
+                            if (cartItem.qty <= 0) state.cart = state.cart.filter(item => item.id !== id);
+                            render();
+                        }
+                        break;
+                    }
+                    case 'open-admin': window.location.href = './admin-dashboard.html'; break;
+                    case 'checkout': alert('إرسال الطلب غير متاح حاليًا.'); break;
+                }
+                return;
+            }
+            const card = event.target.closest('[data-item-id]');
+            if (card) {
+                state.selectedItemId = card.dataset.itemId;
+                render();
+            }
+        });
+
+        loadStore();
+    </script>
+</body>
+
+</html>

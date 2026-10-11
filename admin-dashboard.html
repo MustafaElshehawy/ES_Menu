@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#173c35">
+    <title>إدارة المنيو | DineSmart</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="tailwind.generated.css">
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+
+<body>
+    <main class="auth-screen hidden" id="auth-screen">
+        <section class="auth-card">
+            <a class="brand auth-brand" href="index.html"><span
+                    class="brand-mark">D</span><span><strong>DineSmart</strong><small>إدارة المنيو</small></span></a>
+            <span class="eyebrow">مساحة عملك الرقمية</span>
+            <h1 id="auth-title">تسجيل الدخول</h1>
+            <p class="auth-caption" id="auth-caption">ادخل لحسابك لإدارة متجرك ومنيوك.</p>
+            <form id="auth-form" class="auth-form">
+                <label class="register-field hidden">الاسم<input name="name" autocomplete="name" maxlength="80"></label>
+                <label>البريد الإلكتروني<input name="email" type="email" required autocomplete="email"
+                        maxlength="254"></label>
+                <label class="register-field hidden">اسم المتجر<input name="storeName" maxlength="70"></label>
+                <label>كلمة المرور<input name="password" type="password" required autocomplete="current-password"
+                        minlength="10"></label>
+                <p class="auth-error hidden" id="auth-error" role="alert"></p>
+                <button class="primary-button auth-submit" type="submit" id="auth-submit">دخول</button>
+            </form>
+            <p class="auth-switch"><span id="auth-switch-label">لسه معندكش حساب؟</span> <button type="button"
+                    id="auth-switch">إنشاء حساب</button></p>
+        </section>
+    </main>
+    <div class="dashboard-shell">
+        <aside class="sidebar">
+            <a class="brand" href="index.html" aria-label="DineSmart">
+                <span class="brand-mark">D</span>
+                <span><strong>DineSmart</strong><small>إدارة المنيو</small></span>
+            </a>
+            <div class="store-picker">
+                <label for="store-select">المتجر الحالي</label>
+                <div class="picker-row">
+                    <select id="store-select" aria-label="اختيار المتجر"></select>
+                    <button class="icon-button" id="add-store" title="إضافة متجر" aria-label="إضافة متجر">＋</button>
+                </div>
+            </div>
+            <nav class="navigation" aria-label="القائمة الرئيسية">
+                <button class="nav-item active" data-page="overview"><i data-lucide="layout-dashboard"></i>نظرة
+                    عامة</button>
+                <button class="nav-item" data-page="products"><i data-lucide="utensils"></i>المنتجات</button>
+                <button class="nav-item" data-page="categories"><i data-lucide="grid-2x2"></i>الأقسام</button>
+                <button class="nav-item" data-page="appearance"><i data-lucide="palette"></i>هوية المنيو</button>
+            </nav>
+            <div class="sidebar-bottom">
+                <div class="storage-note" role="status" aria-live="polite"><span class="status-dot"
+                        id="sync-dot"></span><span id="sync-label">متصل بقاعدة البيانات</span></div>
+                <a class="back-link" href="index.html">↗ <span>معاينة المنيو</span></a>
+            </div>
+        </aside>
+
+        <main class="main-panel">
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow" id="page-eyebrow">مساحة العمل</p>
+                    <h1 id="page-title">نظرة عامة</h1>
+                </div>
+                <div class="top-actions">
+                    <a class="preview-button" id="preview-link" href="index.html" target="_blank" rel="noreferrer">↗
+                        <span>فتح المنيو</span></a>
+                    <button class="secondary-button logout-button" id="logout-button"><i
+                            data-lucide="log-out"></i><span>تسجيل الخروج</span></button>
+                    <button class="avatar" id="user-avatar" title="حسابك">م</button>
+                </div>
+            </header>
+            <div class="mobile-storebar"><label for="mobile-store-select">المتجر</label><select id="mobile-store-select"
+                    aria-label="اختيار المتجر"></select><button class="mobile-add-store" id="mobile-add-store"
+                    title="إضافة متجر" aria-label="إضافة متجر">＋</button></div>
+
+            <section class="page-content" id="page-overview">
+                <div class="welcome-strip">
+                    <div><span class="welcome-kicker">مساحة متجرك</span>
+                        <h2 id="welcome-name">أهلاً بك</h2>
+                        <p>حدّث المنيو وخليه جاهز لعملائك في أي وقت.</p>
+                    </div>
+                    <div class="welcome-symbol">✳</div>
+                </div>
+                <div class="stats-grid">
+                    <article class="stat-card"><span class="stat-icon green"><i data-lucide="package"></i></span><span
+                            class="stat-label">إجمالي المنتجات</span><strong id="stat-products">0</strong><small>منتج في
+                            المنيو</small></article>
+                    <article class="stat-card"><span class="stat-icon orange"><i
+                                data-lucide="panels-top-left"></i></span><span class="stat-label">الأقسام</span><strong
+                            id="stat-categories">0</strong><small>قسم منظم</small></article>
+                    <article class="stat-card"><span class="stat-icon lilac"><i data-lucide="eye"></i></span><span
+                            class="stat-label">المتاح للطلب</span><strong id="stat-available">0</strong><small>منتج ظاهر
+                            للعملاء</small></article>
+                </div>
+                <div class="content-columns">
+                    <section class="panel recent-panel">
+                        <div class="panel-heading">
+                            <div><span class="eyebrow">كتالوجك</span>
+                                <h3>آخر المنتجات</h3>
+                            </div><button class="text-action" data-go="products">إدارة المنتجات ←</button>
+                        </div>
+                        <div id="recent-products" class="recent-list"></div>
+                    </section>
+                    <section class="panel quick-panel"><span class="eyebrow">خطوة سريعة</span>
+                        <h3>خلّي منيوك جاهز</h3>
+                        <p>أضف صنف جديد أو ظبّط شكل المنيو قبل ما تشاركه.</p><button class="primary-button"
+                            data-go="products">＋ إضافة منتج</button><button class="secondary-button"
+                            data-go="appearance">تعديل هوية المنيو</button>
+                    </section>
+                </div>
+                <section class="share-strip">
+                    <div><strong>رابط المنيو</strong>
+                        <p>افتح صفحة العميل لمراجعة آخر التعديلات.</p>
+                    </div><button id="copy-link" class="secondary-button">نسخ الرابط</button><code
+                        id="store-url"></code>
+                </section>
+            </section>
+
+            <section class="page-content hidden" id="page-products">
+                <div class="section-toolbar">
+                    <div><span class="eyebrow">كتالوج المتجر</span>
+                        <h2>المنتجات</h2>
+                    </div><button class="primary-button" id="new-product">＋ منتج جديد</button>
+                </div>
+                <div class="toolbar-row"><label class="search-field"><span>⌕</span><input id="product-search"
+                            type="search" placeholder="ابحث عن منتج..."></label><select id="product-filter"
+                        aria-label="فلترة حسب القسم">
+                        <option value="all">كل الأقسام</option>
+                    </select><span class="result-count" id="product-count"></span></div>
+                <div class="panel table-panel">
+                    <div class="product-table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>المنتج</th>
+                                    <th>القسم</th>
+                                    <th>السعر</th>
+                                    <th>الحالة</th>
+                                    <th>إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="product-rows"></tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state hidden" id="empty-products">مفيش منتجات هنا لسه. ابدأ بإضافة أول منتج.</div>
+                </div>
+            </section>
+
+            <section class="page-content hidden" id="page-categories">
+                <div class="section-toolbar">
+                    <div><span class="eyebrow">تنظيم المنيو</span>
+                        <h2>الأقسام</h2>
+                        <p>رتّب المنتجات في أقسام واضحة لعملائك.</p>
+                    </div><button class="primary-button" id="new-category">＋ قسم جديد</button>
+                </div>
+                <div class="category-grid" id="category-grid"></div>
+            </section>
+
+            <section class="page-content hidden" id="page-appearance">
+                <div class="section-toolbar">
+                    <div><span class="eyebrow">شكل متجرك</span>
+                        <h2>هوية المنيو</h2>
+                        <p>اسم الموقع واللوجو والألوان اللي بتظهر لعملائك.</p>
+                    </div><button class="primary-button" id="save-appearance">حفظ التعديلات</button>
+                </div>
+                <div class="appearance-layout">
+                    <form class="panel settings-form" id="appearance-form">
+                        <h3>بيانات النشاط</h3>
+                        <label>اسم الموقع في تبويب المتصفح<input name="siteName" required maxlength="70"></label>
+                        <label>اسم النشاط بالعربي<input name="nameAr" required maxlength="70"></label>
+                        <label>اسم النشاط بالإنجليزي<input name="nameEn" maxlength="70"></label>
+                        <label>العنوان بالعربي<input name="addressAr" maxlength="120"></label>
+                        <label>العملة<select name="currency">
+                                <option value="SAR">ريال سعودي · SAR</option>
+                                <option value="EGP">جنيه مصري · EGP</option>
+                                <option value="AED">درهم إماراتي · AED</option>
+                                <option value="USD">دولار · USD</option>
+                            </select></label>
+                        <div class="form-divider"></div>
+                        <h3>شكل المنيو</h3>
+                        <label class="color-setting">اللون الأساسي<span class="color-input"><input name="primary"
+                                    type="color"><code></code></span></label>
+                        <label class="color-setting">لون الخلفية<span class="color-input"><input name="background"
+                                    type="color"><code></code></span></label>
+                        <label>شعار النشاط<input name="logoFile" type="file" accept="image/*"><small>يفضل صورة مربعة
+                                بحجم أقل من 1 ميجابايت.</small></label>
+                        <div class="logo-preview"><img id="logo-preview" alt="معاينة شعار المتجر"><span
+                                id="logo-placeholder">معاينة الشعار</span><button type="button" id="remove-logo"
+                                title="إزالة الشعار">×</button></div>
+                        <div class="form-divider"></div>
+                        <h3>نسخة البيانات</h3>
+                        <p class="form-help">صدّر نسخة احتياطية أو انقل بيانات متجرك لجهاز آخر.</p>
+                        <div class="backup-actions"><button type="button" class="secondary-button"
+                                id="export-data">تنزيل نسخة</button><label
+                                class="secondary-button import-button">استيراد نسخة<input id="import-data" type="file"
+                                    accept="application/json"></label></div>
+                    </form>
+                    <aside class="preview-panel"><span class="eyebrow">معاينة مباشرة</span>
+                        <div class="mini-menu" id="mini-menu"></div>
+                        <p>المعاينة بتتحدث مع حفظ التعديلات.</p>
+                    </aside>
+                </div>
+            </section>
+            <footer class="page-footer">DineSmart <span>·</span> إدارة المنيو</footer>
+        </main>
+    </div>
+
+    <dialog id="editor-dialog" class="editor-dialog">
+        <form id="editor-form" method="dialog">
+            <div class="dialog-heading">
+                <div><span class="eyebrow" id="dialog-eyebrow">إضافة جديد</span>
+                    <h2 id="dialog-title">منتج جديد</h2>
+                </div><button class="close-button" type="button" data-close aria-label="إغلاق">×</button>
+            </div>
+            <div id="dialog-fields" class="dialog-fields"></div>
+            <div class="dialog-actions"><button type="button" class="secondary-button" data-close>إلغاء</button><button
+                    type="submit" class="primary-button">حفظ</button></div>
+        </form>
+    </dialog>
+    <dialog id="store-dialog" class="editor-dialog">
+        <form id="store-form" method="dialog">
+            <div class="dialog-heading">
+                <div><span class="eyebrow">مساحة جديدة</span>
+                    <h2>إضافة متجر</h2>
+                </div><button class="close-button" type="button" data-close-store aria-label="إغلاق">×</button>
+            </div>
+            <div class="dialog-fields"><label class="full">اسم النشاط بالعربي<input name="storeNameAr" required
+                        maxlength="70"></label><label class="full">اسم النشاط بالإنجليزي<input name="storeNameEn"
+                        maxlength="70"></label><label class="full">العملة<select name="storeCurrency">
+                        <option value="EGP">جنيه مصري · EGP</option>
+                        <option value="SAR">ريال سعودي · SAR</option>
+                        <option value="AED">درهم إماراتي · AED</option>
+                        <option value="USD">دولار · USD</option>
+                    </select></label></div>
+            <div class="dialog-actions"><button type="button" class="secondary-button"
+                    data-close-store>إلغاء</button><button type="submit" class="primary-button">إنشاء المتجر</button>
+            </div>
+        </form>
+    </dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="https://unpkg.com/lucide@0.468.0"></script>
+    <script type="module" src="dashboard.js"></script>
+</body>
+
+</html>
