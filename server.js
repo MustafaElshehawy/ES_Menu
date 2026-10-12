@@ -19,6 +19,18 @@ let pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : undefined
 });
+let schemaInitialization;
+
+function initializeDatabase() {
+    if (!schemaInitialization) {
+        schemaInitialization = pool.query(fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8'))
+            .catch(error => {
+                schemaInitialization = null;
+                throw error;
+            });
+    }
+    return schemaInitialization;
+}
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
@@ -38,6 +50,9 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false
 }));
 app.use(express.json({ limit: '3mb' }));
+app.use('/api', (req, res, next) => {
+    initializeDatabase().then(() => next(), next);
+});
 
 const sessionCookie = {
     httpOnly: true,
@@ -340,7 +355,7 @@ app.use((error, req, res, next) => {
 
 async function start() {
     if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required. Copy .env.example to .env and set it.');
-    await pool.query(fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8'));
+    await initializeDatabase();
     const server = app.listen(port, '0.0.0.0', () => console.log(`DineSmart listening on port ${port}`));
     for (const signal of ['SIGINT', 'SIGTERM']) {
         process.on(signal, () => server.close(() => pool.end().finally(() => process.exit(0))));
@@ -359,5 +374,6 @@ module.exports = {
     start,
     setDatabasePool(databasePool) {
         pool = databasePool;
+        schemaInitialization = Promise.resolve();
     }
 };

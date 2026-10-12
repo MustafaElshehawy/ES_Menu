@@ -15,9 +15,22 @@
 
 The server creates the tables in `schema.sql` on its first start. Keep `.env` private and out of source control.
 
-## Hosting
+## Vercel
 
-Create a PostgreSQL database and a Node web service from this project. Set the build command to `npm install && npm run build:css`, the start command to `npm start`, and the health-check path to `/api/health`. Add `DATABASE_URL`, `JWT_SECRET` (at least 32 random characters), and `NODE_ENV=production` to the service environment. Set `DATABASE_SSL=true` only if your provider requires TLS for database connections. The app listens on the host-provided `PORT`.
+The repository includes a catch-all Node.js function for `/api/*` and a build command for the generated stylesheet. Import the GitHub repository into Vercel and deploy it with the default **Other** framework preset.
+
+Create a PostgreSQL database, then add these environment variables to the Vercel project for every environment you deploy:
+
+- `DATABASE_URL`
+- `JWT_SECRET` (at least 32 random characters)
+- `NODE_ENV=production`
+- `DATABASE_SSL=true` only if your database provider requires TLS
+
+The schema is initialized on the first API request. After setting the variables, redeploy and verify `/api/health` returns `{"status":"ok","database":"connected"}`.
+
+## Persistent Node.js hosting
+
+For Render, Railway, Fly.io, or a VPS, create a PostgreSQL database and a Node web service from this project. Set the build command to `npm install && npm run build:css`, the start command to `npm start`, and the health-check path to `/api/health`. Add `DATABASE_URL`, `JWT_SECRET` (at least 32 random characters), and `NODE_ENV=production` to the service environment. Set `DATABASE_SSL=true` only if your provider requires TLS for database connections. The app listens on the host-provided `PORT`.
 
 Serve the app and its API from the same public domain. Use HTTPS; production cookies are marked Secure. Back up PostgreSQL regularly. Product photos are currently supplied as image URLs or small uploaded logos; use object storage (S3-compatible) for larger photo libraries.
 
