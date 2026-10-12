@@ -1,29 +1,31 @@
-# ES_Menu
+# DineSmart
 
-Multi-store restaurant menu platform with an Arabic admin dashboard, customer-facing menus, account authentication, and PostgreSQL persistence.
+Multi-store restaurant menus with an Arabic admin dashboard, customer-facing menus, account authentication, and SQL Server persistence. The application backend is ASP.NET Core MVC on .NET 10; the existing HTML, CSS, and JavaScript frontend is served by the MVC app.
 
 ## Requirements
 
-- Node.js 20 or newer
-- PostgreSQL
+- .NET 10 SDK
+- SQL Server 2019 or newer
 
 ## Run locally
 
-1. Copy `.env.example` to `.env` and configure `DATABASE_URL` and `JWT_SECRET`.
-2. Install dependencies and build the stylesheet:
+1. Create the database if needed:
 
-   ```sh
-   npm install
-   npm run build:css
+   ```powershell
+   sqlcmd -S localhost -E -Q "IF DB_ID(N'DineSmart') IS NULL CREATE DATABASE [DineSmart]"
    ```
 
-3. Start the app with `npm start` and open `http://localhost:3000/admin-dashboard.html`.
+2. Set `ConnectionStrings__Default` if your SQL Server is not the local Windows-authenticated instance.
+3. Run the app:
 
-## Checks
+   ```powershell
+   dotnet run --project DineSmart.Mvc
+   ```
 
-```sh
-npm run check
-npm test
-```
+The app creates its tables on startup. Open `https://localhost:7276/admin-dashboard.html`; accept or trust the local .NET development certificate if prompted. API health is available at `/api/health`.
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for hosting instructions. Keep `.env` and database credentials private.
+## Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md). Vercel does not run this ASP.NET Core server; deploy the included Docker image to a .NET-compatible host and provide a SQL Server connection string.
+
+The original Node.js files remain in the repository for now, but the supported application entry point is `DineSmart.Mvc`.

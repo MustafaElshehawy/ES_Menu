@@ -135,8 +135,12 @@ function renderCategories() {
     const store = currentStore();
     $('#category-grid').innerHTML = store.categories.length ? store.categories.map(category => {
         const count = store.menu.filter(item => item.categoryId === category.id).length;
-        return `<article class="category-card"><span class="category-emoji">${text(category.icon || '🍽️')}</span><div><strong>${text(category.name.ar || category.name.en)}</strong><small>${count} منتج</small></div><div class="category-actions"><button title="تعديل القسم" aria-label="تعديل القسم" data-edit-category="${text(category.id)}"><i data-lucide="pencil"></i></button><button title="حذف القسم" aria-label="حذف القسم" data-delete-category="${text(category.id)}"><i data-lucide="trash-2"></i></button></div></article>`;
+        const image = category.image
+            ? `<img class="category-emoji" src="${text(category.image)}" alt="" data-hide-on-error>`
+            : `<span class="category-emoji">${text(category.icon || '🍽️')}</span>`;
+        return `<article class="category-card"><div class="category-card-actions"><button title="تعديل القسم" aria-label="تعديل القسم" data-edit-category="${text(category.id)}"><i data-lucide="pencil"></i></button><button title="حذف القسم" aria-label="حذف القسم" data-delete-category="${text(category.id)}"><i data-lucide="trash-2"></i></button></div>${image}<div class="category-card-copy"><strong>${text(category.name.ar || category.name.en)}</strong><small>${count} منتج</small></div></article>`;
     }).join('') : '<div class="panel empty-state">مفيش أقسام لسه. أنشئ أول قسم للمنيو.</div>';
+    bindImageFallbacks($('#category-grid'));
 }
 
 function updateColorCode(input) {
@@ -165,7 +169,7 @@ function renderMiniPreview(store = currentStore()) {
     $('#mini-menu').style.background = store.theme.background || '#f8fafc';
     $('#mini-menu').innerHTML = `
         <div class="mini-brand">${store.profile.logo ? `<img src="${text(store.profile.logo)}" alt="">` : '<span class="mini-logo-fallback"></span>'}<div><strong>${text(store.profile.name.ar || store.profile.name.en)}</strong><small>${text(store.profile.address.ar)}</small></div></div>
-        <div class="mini-categories">${store.categories.slice(0, 3).map(category => `<span style="background:${text(store.theme.primary)}">${text(category.icon)} ${text(category.name.ar || category.name.en)}</span>`).join('')}</div>
+        <div class="mini-categories">${store.categories.slice(0, 3).map(category => `<span style="background:${text(store.theme.primary)}">${category.image ? `<img src="${text(category.image)}" alt="">` : `<b>${text(category.icon || '🍽️')}</b>`}<small>${text(category.name.ar || category.name.en)}</small></span>`).join('')}</div>
         <div class="mini-food"><span></span><div><strong>${text(store.menu[0]?.name.ar || store.menu[0]?.name.en || 'اسم المنتج')}</strong><small>${Number(store.menu[0]?.price || 0).toFixed(2)} ${currencyLabel(store.currency)}</small></div></div>`;
 }
 
@@ -236,7 +240,7 @@ function productFields(item, store) {
 function categoryFields(item) {
     return `${field('اسم القسم بالعربي', 'nameAr', item?.name.ar, { required: true, maxlength: 45 })}
         ${field('اسم القسم بالإنجليزي', 'nameEn', item?.name.en, { maxlength: 45 })}
-        ${field('الأيقونة (إيموجي)', 'icon', item?.icon || '🍽️', { required: true, maxlength: 8 })}`;
+    <div class="category-image-field full"><span>صورة القسم</span><div class="category-image-control"><img id="category-image-preview" src="${text(item?.image || '')}" alt="" class="${item?.image ? 'has-image' : ''}"><span id="category-image-empty">${item?.image ? '' : text(item?.icon || '🍽️')}</span><label class="category-image-upload">اختيار صورة<input type="file" name="imageFile" accept="image/*"></label><button type="button" id="remove-category-image" class="${item?.image ? '' : 'hidden'}">إزالة الصورة</button></div><input type="hidden" name="image" value="${text(item?.image || '')}"></div>`;
 }
 
 function saveEditor(event) {
@@ -255,7 +259,8 @@ function saveEditor(event) {
         if (editingId) store.menu = store.menu.map(item => item.id === editingId ? next : item);
         else store.menu.unshift(next);
     } else {
-        const next = { id: editingId || createId('category'), name: bilingual(data.nameAr, data.nameEn), icon: data.icon.trim() };
+        const previous = editingId ? store.categories.find(item => item.id === editingId) : null;
+        const next = { id: editingId || createId('category'), name: bilingual(data.nameAr, data.nameEn), icon: previous?.icon || '🍽️', image: data.image || '' };
         if (editingId) store.categories = store.categories.map(item => item.id === editingId ? next : item);
         else store.categories.push(next);
     }
@@ -392,6 +397,29 @@ function attachEvents() {
     $('#new-product').addEventListener('click', () => openEditor('product'));
     $('#new-category').addEventListener('click', () => openEditor('category'));
     $('#editor-form').addEventListener('submit', saveEditor);
+    $('#dialog-fields').addEventListener('change', async event => {
+        if (event.target.name !== 'imageFile' || !event.target.files[0]) return;
+        try {
+            const image = await compressLogo(event.target.files[0]);
+            $('#dialog-fields').querySelector('[name="image"]').value = image;
+            $('#category-image-preview').src = image;
+            $('#category-image-preview').classList.add('has-image');
+            $('#category-image-empty').textContent = '';
+            $('#remove-category-image').classList.remove('hidden');
+        } catch (error) {
+            notify(error.message);
+        } finally {
+            event.target.value = '';
+        }
+    });
+    $('#dialog-fields').addEventListener('click', event => {
+        if (event.target.id !== 'remove-category-image') return;
+        $('#dialog-fields').querySelector('[name="image"]').value = '';
+        $('#category-image-preview').src = '';
+        $('#category-image-preview').classList.remove('has-image');
+        $('#category-image-empty').textContent = '🍽️';
+        event.target.classList.add('hidden');
+    });
     document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => $('#editor-dialog').close()));
     $('#store-form').addEventListener('submit', saveNewStore);
     document.querySelectorAll('[data-close-store]').forEach(button => button.addEventListener('click', () => $('#store-dialog').close()));

@@ -102,13 +102,15 @@
                     </div>
                 </header>
 
-                <div class="max-w-7xl mx-auto flex gap-3 overflow-x-auto p-6 no-scrollbar">
-                    <button data-category-id="" class="flex-shrink-0 px-6 py-2 rounded-xl text-xs font-bold transition-all ${!state.activeCategoryId ? 'category-active' : 'bg-white text-gray-400 border'}">
-                        ${state.lang === 'en' ? 'All' : 'الكل'}
+                <div class="category-strip max-w-7xl mx-auto no-scrollbar">
+                    <button data-category-id="" class="category-option ${!state.activeCategoryId ? 'category-active' : ''}">
+                        <span class="category-option-image category-option-all">✳</span>
+                        <span class="category-option-name">${state.lang === 'en' ? 'All' : 'الكل'}</span>
                     </button>
                     ${state.categories.map(cat => `
-                        <button data-category-id="${safe(cat.id)}" class="flex-shrink-0 px-6 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${state.activeCategoryId === cat.id ? 'category-active' : 'bg-white text-gray-400 border'}">
-                            <span>${safe(cat.icon)}</span> <span>${safe(cat.name[state.lang] || cat.name.ar)}</span>
+                        <button data-category-id="${safe(cat.id)}" class="category-option ${state.activeCategoryId === cat.id ? 'category-active' : ''}">
+                            ${cat.image ? `<img class="category-option-image" src="${safe(cat.image)}" alt="" loading="lazy">` : `<span class="category-option-image category-option-fallback">${safe(cat.icon || '🍽️')}</span>`}
+                            <span class="category-option-name">${safe(cat.name[state.lang] || cat.name.ar)}</span>
                         </button>
                     `).join('')}
                 </div>

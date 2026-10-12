@@ -2,38 +2,37 @@
 
 ## Requirements
 
-- Node.js 20 or newer
-- A PostgreSQL database
-- A host that runs a persistent Node.js web service (Render, Railway, Fly.io, or a VPS)
+- .NET 10 runtime
+- SQL Server 2019 or newer
+- A host that supports ASP.NET Core or Docker, such as Azure App Service or a container service
 
-## Local setup
+Vercel does not host this ASP.NET Core application. The prior Vercel deployment must be replaced with a .NET-compatible host; the frontend and API are served together by the MVC app.
 
-1. Create a PostgreSQL database and copy its connection URL.
-2. Copy `.env.example` to `.env` and set `DATABASE_URL` and a long random `JWT_SECRET`.
-3. Install dependencies and build production CSS with `npm install` and `npm run build:css`.
-4. Start the app with `npm start` and open `http://localhost:3000`.
+## SQL Server
 
-The server creates the tables in `schema.sql` on its first start. Keep `.env` private and out of source control.
+Create a SQL Server database named `DineSmart` (or choose another name in the connection string). On application startup, the app creates the tables from `DineSmart.Mvc/Database/schema.sql`. The application identity needs permission to create these tables on first startup.
 
-## Vercel
+Configure `ConnectionStrings__Default` in the host's environment. For Azure SQL, use a SQL-authenticated connection string with encryption enabled, for example:
 
-The repository includes a catch-all Node.js function for `/api/*` and a build command for the generated stylesheet. Import the GitHub repository into Vercel and deploy it with the default **Other** framework preset.
+```text
+Server=tcp:<server>.database.windows.net,1433;Initial Catalog=DineSmart;Persist Security Info=False;User ID=<user>;Password=<password>;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
+```
 
-Create a PostgreSQL database, then add these environment variables to the Vercel project for every environment you deploy:
+Never commit production credentials. Use the host's secret/environment-variable settings.
 
-- `DATABASE_URL`
-- `JWT_SECRET` (at least 32 random characters)
-- `NODE_ENV=production`
-- `DATABASE_SSL=true` only if your database provider requires TLS
+## Docker deployment
 
-The schema is initialized on the first API request. After setting the variables, redeploy and verify `/api/health` returns `{"status":"ok","database":"connected"}`.
+From the repository root, build and run the application:
 
-## Persistent Node.js hosting
+```sh
+docker build -f DineSmart.Mvc/Dockerfile -t dinesmart .
+docker run --rm -p 8080:8080 -e ConnectionStrings__Default="<sql-server-connection-string>" dinesmart
+```
 
-For Render, Railway, Fly.io, or a VPS, create a PostgreSQL database and a Node web service from this project. Set the build command to `npm install && npm run build:css`, the start command to `npm start`, and the health-check path to `/api/health`. Add `DATABASE_URL`, `JWT_SECRET` (at least 32 random characters), and `NODE_ENV=production` to the service environment. Set `DATABASE_SSL=true` only if your provider requires TLS for database connections. The app listens on the host-provided `PORT`.
+Configure the same connection string in the hosting service, expose port `8080`, and use `/api/health` as the health-check path. Serve the app over HTTPS so its authentication cookie remains secure.
 
-Serve the app and its API from the same public domain. Use HTTPS; production cookies are marked Secure. Back up PostgreSQL regularly. Product photos are currently supplied as image URLs or small uploaded logos; use object storage (S3-compatible) for larger photo libraries.
+## Data migration
 
-## Accounts and customer data
+This version creates a new SQL Server schema; it does not automatically copy accounts or menu data from the previous PostgreSQL database. Export and transform existing records before switching traffic if existing customer data must be retained. Password hashes from the old system are not compatible with the new PBKDF2 format, so users must register new accounts unless a dedicated credential migration is performed.
 
-Each signup gets an account and an independent store. The owner check is enforced in the API; public menu pages expose only available products and public branding. Share a store using the URL generated in the dashboard. Do not expose the database URL or JWT secret in frontend files.
+Each new account receives an independent store. The API checks store ownership, and public menu responses include available products only. Back up SQL Server regularly.
